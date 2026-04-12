@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Minigame Stoikiometri</title>
+    <title>Minigame Stoikiometri - Stage 1</title>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         body {
@@ -91,61 +91,110 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
+        // --- ASSET MANAGER ---
         const assets = {
             bg: new Image(),
             stat: new Image(),
             stat1: new Image(),
+            statError: new Image(),
             charStay: new Image(),
             charWalk: new Image(),
             lifebar: new Image(),
             checklist: new Image(),
             popupExit: new Image(),
-            popupHelp: new Image()
+            popupHelp: new Image(),
+            itemC: new Image(),
+            itemO: new Image(),
+            itemN: new Image(),
+            itemF: new Image(),
+            itemH: new Image(),
+            entity: new Image()
         };
 
         assets.bg.src = 'kanvaspmmg1.png';
         assets.stat.src = 'statpmmg.png';
         assets.stat1.src = 'statpmmg1.png';
+        assets.statError.src = 'statpmmgx.png';
         assets.charStay.src = 'charpmmstay.png';
         assets.charWalk.src = 'charpmmwalk.gif';
         assets.lifebar.src = 'lifebar.png';
         assets.checklist.src = 'checklist.gif';
         assets.popupExit.src = 'popupexit.png';
         assets.popupHelp.src = 'popuppmmg.gif'; 
+        assets.itemC.src = 'pmmc12.png';
+        assets.itemO.src = 'pmmo16.png';
+        assets.itemN.src = 'pmmn14.png';
+        assets.itemF.src = 'pmmf19.png';
+        assets.itemH.src = 'pmmh1.png';
+        assets.entity.src = 'entity101.gif';
 
+        // --- GLOBAL STATE ---
         const TILE_SIZE = 32;
         let totalMass = 0;
         let lives = [true, true, true]; 
         let checklists = [false, false, false, false, false, false]; 
-
-        const STATE = { PLAY: 0, EXIT_PROMPT: 1, HELP_PROMPT: 2, GAMEOVER: 3 };
+        let errorUITimer = 0;
+        let floatingTexts = [];
+        
+        const STATE = { PLAY: 0, EXIT_PROMPT: 1, HELP_PROMPT: 2, GAMEOVER: 3, DYING: 4, CLEARED: 5 };
         let currentState = STATE.PLAY;
+        let fadeAlpha = 0;
+        let fadeDirection = 1;
 
+        // --- MAP GRID (0 = Jalan, 1 = Tembok) ---
         const mapGrid = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 
-            [1,0,0,0,0,1,1,1,1,0,0,1,1,1,0,0], 
-            [0,0,1,1,0,1,1,0,0,1,0,1,0,0,1,0], 
-            [1,1,1,0,0,1,1,0,1,1,1,1,0,1,1,0], 
-            [0,0,0,1,0,1,1,0,1,0,0,1,0,1,0,0], 
-            [1,1,1,1,0,0,0,0,1,0,1,0,0,1,0,0], 
-            [0,0,1,1,1,0,1,0,1,0,1,0,1,1,0,0], 
-            [0,1,0,0,0,1,1,0,1,1,1,0,0,1,0,1]  
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], // R0 (a1-p1)
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], // R1 (a2-p2)
+            [1,0,0,0,0,0,1,1,1,0,0,1,1,0,0,0], // R2 (a3-p3) - j3 is F
+            [0,0,1,1,0,1,0,0,0,1,0,0,1,0,0,0], // R3 (a4-p4) - a4 is H, p4 is N
+            [1,1,0,0,0,1,0,1,0,1,1,0,0,0,1,1], // R4 (a5-p5)
+            [0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0], // R5 (a6-p6) - a6 spawn, p6 exit
+            [1,1,1,1,0,0,0,1,0,1,0,0,0,1,1,0], // R6 (a7-p7)
+            [0,0,0,1,0,1,0,0,1,0,1,1,0,1,0,0], // R7 (a8-p8) - j8 is N
+            [0,1,0,0,0,1,0,1,0,1,0,0,0,0,0,1]  // R8 (a9-p9) - a9 is O, h9 is C, k9 is H
+        ];
+
+        // --- ITEMS & ENTITY DATA ---
+        let items = [
+            { c: 7,  r: 8, trueItem: false, mass: 12, img: assets.itemC, collected: false }, // h9 (C)
+            { c: 0,  r: 8, trueItem: true,  mass: 16, img: assets.itemO, collected: false, uiIdx: 0 }, // a9 (O) -> e2
+            { c: 9,  r: 7, trueItem: false, mass: 14, img: assets.itemN, collected: false }, // j8 (N)
+            { c: 15, r: 3, trueItem: false, mass: 14, img: assets.itemN, collected: false }, // p4 (N)
+            { c: 9,  r: 2, trueItem: false, mass: 19, img: assets.itemF, collected: false }, // j3 (F)
+            { c: 0,  r: 3, trueItem: true,  mass: 1,  img: assets.itemH, collected: false, uiIdx: 1 }, // a4 (H) -> f2
+            { c: 10, r: 8, trueItem: true,  mass: 1,  img: assets.itemH, collected: false, uiIdx: 2 }  // k9 (H) -> g2
         ];
 
         let player = {
-            col: 0, 
-            row: 5, 
-            x: 0,
-            y: 5 * TILE_SIZE,
-            targetX: 0,
-            targetY: 5 * TILE_SIZE,
+            col: 0, row: 5, // Spawn a6
+            x: 0, y: 5 * TILE_SIZE,
+            targetX: 0, targetY: 5 * TILE_SIZE,
             speed: 2.5,
-            facingRight: true // Penambahan properti arah hadap
+            facingRight: true
         };
 
+        let entityPath = [
+            {c: 15, r: 6}, // p7
+            {c: 15, r: 7}, // p8
+            {c: 14, r: 7}, // o8
+            {c: 14, r: 8}, // o9
+            {c: 13, r: 8}  // n9
+        ];
+        
+        let entity = {
+            col: 15, row: 6,
+            x: 15 * TILE_SIZE, y: 6 * TILE_SIZE,
+            targetX: 15 * TILE_SIZE, targetY: 6 * TILE_SIZE,
+            speed: 1.5,
+            pathIdx: 0,
+            dir: 1, // 1 maju, -1 mundur
+            isMoving: false,
+            facingRight: false
+        };
+
+        // --- KONTROL INPUT ---
         const activeKeys = { up: false, down: false, left: false, right: false };
-        let isMoving = false; 
+        let isPlayerMoving = false; 
 
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
@@ -188,12 +237,39 @@
             });
         }
 
+        // --- LOGIKA PERMAINAN ---
+        function spawnFloatingText(text, x, y, color) {
+            floatingTexts.push({ x: x + 16, y: y, text: text, color: color, life: 60, maxLife: 60 });
+        }
+
         function handleAction() {
-            console.log("Tombol Aksi ditekan di tile:", player.col, player.row);
+            // Cek apakah player berdiri di atas pintu exit (p6)
+            if (player.col === 15 && player.row === 5) {
+                if (checklists[0] && checklists[1] && checklists[2]) {
+                    currentState = STATE.CLEARED;
+                    console.log("Stage Cleared! Lanjut ke Stage 2.");
+                    return;
+                } else {
+                    spawnFloatingText("Misi belum selesai!", player.x, player.y, "#ffff00");
+                }
+            }
+
+            // Cek Item di bawah player
+            let item = items.find(i => i.c === player.col && i.r === player.row && !i.collected);
+            if (item) {
+                if (item.trueItem) {
+                    item.collected = true;
+                    totalMass += item.mass;
+                    checklists[item.uiIdx] = true;
+                    spawnFloatingText(`+${item.mass} amu`, player.x, player.y, "#00ff00");
+                } else {
+                    spawnFloatingText("bukan yang ini :(", player.x, player.y, "#ff0000");
+                    errorUITimer = 180; // Tampilkan statpmmgx.png selama ~3 detik (asumsi 60fps)
+                }
+            }
         }
 
         function movePlayer(dCol, dRow) {
-            // Update arah hadap jika bergerak ke kiri/kanan
             if (dCol === 1) player.facingRight = true;
             else if (dCol === -1) player.facingRight = false;
 
@@ -206,7 +282,7 @@
                     player.row = nextRow;
                     player.targetX = player.col * TILE_SIZE;
                     player.targetY = player.row * TILE_SIZE;
-                    isMoving = true;
+                    isPlayerMoving = true;
                 }
             }
         }
@@ -217,10 +293,232 @@
             else if(lives[2]) {
                 lives[2] = false;
                 currentState = STATE.GAMEOVER;
-                console.log("Game Over!");
             }
         }
 
+        function resetStage() {
+            // Reset Player
+            player.col = 0; player.row = 5;
+            player.x = 0; player.y = 5 * TILE_SIZE;
+            player.targetX = player.x; player.targetY = player.y;
+            isPlayerMoving = false;
+            
+            // Reset Entity
+            entity.pathIdx = 0; entity.dir = 1;
+            entity.col = 15; entity.row = 6;
+            entity.x = 15 * TILE_SIZE; entity.y = 6 * TILE_SIZE;
+            entity.targetX = entity.x; entity.targetY = entity.y;
+            entity.isMoving = false;
+            
+            // Reset Item & Stat
+            items.forEach(i => i.collected = false);
+            totalMass = 0;
+            checklists = [false, false, false, false, false, false];
+            errorUITimer = 0;
+            floatingTexts = [];
+        }
+
+        // --- UPDATE LOOP ---
+        function update() {
+            if (currentState === STATE.DYING) {
+                fadeAlpha += 0.02 * fadeDirection;
+                if (fadeAlpha >= 1 && fadeDirection === 1) {
+                    fadeDirection = -1;
+                    takeDamage();
+                    if (currentState !== STATE.GAMEOVER) resetStage();
+                } else if (fadeAlpha <= 0 && fadeDirection === -1) {
+                    fadeAlpha = 0;
+                    fadeDirection = 1;
+                    currentState = STATE.PLAY;
+                }
+                return;
+            }
+
+            if (currentState !== STATE.PLAY) return;
+
+            // Timer UI Error
+            if (errorUITimer > 0) errorUITimer--;
+
+            // Hitbox Deteksi Entity (Jarak 1 Tile/Bersentuhan)
+            let dist = Math.abs(player.col - entity.col) + Math.abs(player.row - entity.row);
+            if (dist <= 1 && currentState === STATE.PLAY) {
+                currentState = STATE.DYING;
+                return;
+            }
+
+            // Update Animasi Player
+            if (isPlayerMoving) {
+                let dx = player.targetX - player.x;
+                let dy = player.targetY - player.y;
+
+                if (Math.abs(dx) > 0) player.x += Math.sign(dx) * Math.min(player.speed, Math.abs(dx));
+                if (Math.abs(dy) > 0) player.y += Math.sign(dy) * Math.min(player.speed, Math.abs(dy));
+
+                if (player.x === player.targetX && player.y === player.targetY) {
+                    isPlayerMoving = false;
+                }
+            } else {
+                let dCol = 0; let dRow = 0;
+                if (activeKeys.up) dRow = -1; 
+                else if (activeKeys.down) dRow = 1;
+                else if (activeKeys.left) dCol = -1; 
+                else if (activeKeys.right) dCol = 1;
+                
+                if (dCol !== 0 || dRow !== 0) movePlayer(dCol, dRow);
+            }
+
+            // Update Animasi & Rute Entity
+            if (entity.isMoving) {
+                let edx = entity.targetX - entity.x;
+                let edy = entity.targetY - entity.y;
+
+                if (Math.abs(edx) > 0) entity.x += Math.sign(edx) * Math.min(entity.speed, Math.abs(edx));
+                if (Math.abs(edy) > 0) entity.y += Math.sign(edy) * Math.min(entity.speed, Math.abs(edy));
+
+                if (entity.x === entity.targetX && entity.y === entity.targetY) {
+                    entity.isMoving = false;
+                }
+            } else {
+                let nextIdx = entity.pathIdx + entity.dir;
+                if (nextIdx >= entityPath.length || nextIdx < 0) {
+                    entity.dir *= -1; // Balik arah jika mentok rute
+                    nextIdx = entity.pathIdx + entity.dir;
+                }
+                let nextNode = entityPath[nextIdx];
+                
+                if (nextNode.c > entity.col) entity.facingRight = true;
+                else if (nextNode.c < entity.col) entity.facingRight = false;
+
+                entity.col = nextNode.c;
+                entity.row = nextNode.r;
+                entity.targetX = entity.col * TILE_SIZE;
+                entity.targetY = entity.row * TILE_SIZE;
+                entity.pathIdx = nextIdx;
+                entity.isMoving = true;
+            }
+
+            // Update Floating Texts
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                floatingTexts[i].y -= 0.5;
+                floatingTexts[i].life--;
+                if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+            }
+        }
+
+        // --- RENDER LOOP ---
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Layer Dasar
+            if (assets.bg.complete) ctx.drawImage(assets.bg, 0, 0, 512, 288);
+
+            // Render Items
+            items.forEach(item => {
+                if (!item.collected && item.img.complete) {
+                    ctx.drawImage(item.img, item.c * TILE_SIZE, item.r * TILE_SIZE, 32, 32);
+                }
+            });
+
+            // Render Entity dengan flip
+            if (assets.entity.complete) {
+                ctx.save();
+                if (!entity.facingRight) {
+                    ctx.translate(entity.x + 16, entity.y + 16);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(assets.entity, -16, -16, 32, 32);
+                } else {
+                    ctx.drawImage(assets.entity, entity.x, entity.y, 32, 32);
+                }
+                ctx.restore();
+            }
+
+            // Render Player dengan flip
+            const currentCharAsset = isPlayerMoving ? assets.charWalk : assets.charStay;
+            if (currentCharAsset.complete) {
+                ctx.save(); 
+                if (!player.facingRight) {
+                    ctx.translate(player.x + 16, player.y + 16);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(currentCharAsset, -16, -16, 32, 32);
+                } else {
+                    ctx.drawImage(currentCharAsset, player.x, player.y, 32, 32);
+                }
+                ctx.restore(); 
+            }
+
+            // Layer Status UI
+            if (assets.stat.complete) ctx.drawImage(assets.stat, 0, 0, 512, 288);
+            if (assets.stat1.complete) ctx.drawImage(assets.stat1, 0, 0, 512, 288);
+
+            if (assets.lifebar.complete) {
+                if(lives[0]) ctx.drawImage(assets.lifebar, 32, 32, 32, 32);  
+                if(lives[1]) ctx.drawImage(assets.lifebar, 64, 32, 32, 32);  
+                if(lives[2]) ctx.drawImage(assets.lifebar, 96, 32, 32, 32);  
+            }
+
+            if (assets.checklist.complete) {
+                // e2=128(Idx 0), f2=160(Idx 1), g2=192(Idx 2)
+                for(let i=0; i<3; i++) {
+                    if(checklists[i]) {
+                        ctx.drawImage(assets.checklist, 128 + (i * 32), 32, 32, 32); 
+                    }
+                }
+            }
+
+            ctx.fillStyle = "#dedede";
+            ctx.font = "24px 'VT323', monospace";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillText(`${totalMass}`, 330, 48); 
+
+            // Render Error UI
+            if (errorUITimer > 0 && assets.statError.complete) {
+                ctx.drawImage(assets.statError, 0, 0, 512, 288);
+            }
+
+            // Render Floating Texts
+            ctx.textAlign = "center";
+            floatingTexts.forEach(ft => {
+                ctx.fillStyle = ft.color;
+                ctx.globalAlpha = ft.life / ft.maxLife;
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.globalAlpha = 1.0;
+            });
+
+            // Efek Fade to Black
+            if (fadeAlpha > 0) {
+                ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // Popup UI
+            if (currentState === STATE.EXIT_PROMPT && assets.popupExit.complete) {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(assets.popupExit, 0, 0, 512, 288);
+            } 
+            else if (currentState === STATE.HELP_PROMPT && assets.popupHelp.complete) {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(assets.popupHelp, 0, 0, 512, 288);
+            }
+            else if (currentState === STATE.CLEARED) {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#00ff00";
+                ctx.textAlign = "center";
+                ctx.fillText("STAGE 1 CLEARED!", 256, 144);
+            }
+            else if (currentState === STATE.GAMEOVER) {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#ff0000";
+                ctx.textAlign = "center";
+                ctx.fillText("GAME OVER", 256, 144);
+            }
+        }
+
+        // --- MOUSE/TOUCH KLIK UI ---
         canvas.addEventListener('pointerdown', (e) => {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -233,111 +531,18 @@
                 else if (x >= 480 && x <= 512 && y >= 32 && y <= 64) currentState = STATE.HELP_PROMPT;
             } 
             else if (currentState === STATE.EXIT_PROMPT) {
-                if (x >= 160 && x <= 256 && y >= 160 && y <= 192) {
-                    console.log("Keluar dari game!");
-                }
-                else if (x >= 256 && x <= 352 && y >= 160 && y <= 192) {
-                    currentState = STATE.PLAY;
-                }
+                if (x >= 160 && x <= 256 && y >= 160 && y <= 192) console.log("Keluar dari game!");
+                else if (x >= 256 && x <= 352 && y >= 160 && y <= 192) currentState = STATE.PLAY;
             }
-            else if (currentState === STATE.HELP_PROMPT) {
-                currentState = STATE.PLAY;
-            }
+            else if (currentState === STATE.HELP_PROMPT) currentState = STATE.PLAY;
         });
 
+        // Jalankan game
         function gameLoop() {
             update();
             render();
             requestAnimationFrame(gameLoop);
         }
-
-        function update() {
-            if (currentState !== STATE.PLAY) return;
-
-            if (isMoving) {
-                let dx = player.targetX - player.x;
-                let dy = player.targetY - player.y;
-
-                if (Math.abs(dx) > 0) player.x += Math.sign(dx) * Math.min(player.speed, Math.abs(dx));
-                if (Math.abs(dy) > 0) player.y += Math.sign(dy) * Math.min(player.speed, Math.abs(dy));
-
-                if (player.x === player.targetX && player.y === player.targetY) {
-                    isMoving = false;
-                }
-            } 
-            else {
-                let dCol = 0; let dRow = 0;
-                if (activeKeys.up) dRow = -1; 
-                else if (activeKeys.down) dRow = 1;
-                else if (activeKeys.left) dCol = -1; 
-                else if (activeKeys.right) dCol = 1;
-                
-                if (dCol !== 0 || dRow !== 0) movePlayer(dCol, dRow);
-            }
-        }
-
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 1. Layer Map Latar
-            if (assets.bg.complete) ctx.drawImage(assets.bg, 0, 0, 512, 288);
-
-            // 2. Render Karakter dengan Pengecekan Arah
-            const currentCharAsset = isMoving ? assets.charWalk : assets.charStay;
-            if (currentCharAsset.complete) {
-                ctx.save(); // Simpan state canvas saat ini
-                if (!player.facingRight) {
-                    // Geser origin ke titik tengah karakter, flip X, lalu gambar
-                    ctx.translate(player.x + 16, player.y + 16);
-                    ctx.scale(-1, 1);
-                    ctx.drawImage(currentCharAsset, -16, -16, 32, 32);
-                } else {
-                    // Gambar normal menghadap kanan
-                    ctx.drawImage(currentCharAsset, player.x, player.y, 32, 32);
-                }
-                ctx.restore(); // Kembalikan state canvas agar elemen lain tidak ikut terbalik
-            }
-
-            // 3. Layer Status & UI
-            if (assets.stat.complete) ctx.drawImage(assets.stat, 0, 0, 512, 288);
-            if (assets.stat1.complete) ctx.drawImage(assets.stat1, 0, 0, 512, 288);
-
-            // 4. Layer Nyawa
-            if (assets.lifebar.complete) {
-                if(lives[0]) ctx.drawImage(assets.lifebar, 32, 32, 32, 32);  
-                if(lives[1]) ctx.drawImage(assets.lifebar, 64, 32, 32, 32);  
-                if(lives[2]) ctx.drawImage(assets.lifebar, 96, 32, 32, 32);  
-            }
-
-            // 5. Layer Checklist Misi
-            if (assets.checklist.complete) {
-                for(let i=0; i<checklists.length; i++) {
-                    if(checklists[i]) {
-                        ctx.drawImage(assets.checklist, 128 + (i * 32), 32, 32, 32); 
-                    }
-                }
-            }
-
-            // 6. Teks Massa Total
-            ctx.fillStyle = "#dedede";
-            ctx.font = "24px 'VT323', monospace";
-            ctx.textAlign = "left";
-            ctx.textBaseline = "middle";
-            ctx.fillText(`${totalMass}`, 330, 48); 
-
-            // 7. Layer Menu Pop Up
-            if (currentState === STATE.EXIT_PROMPT && assets.popupExit.complete) {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; 
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(assets.popupExit, 0, 0, 512, 288);
-            } 
-            else if (currentState === STATE.HELP_PROMPT && assets.popupHelp.complete) {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(assets.popupHelp, 0, 0, 512, 288);
-            }
-        }
-
         gameLoop();
     </script>
 </body>
