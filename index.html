@@ -141,17 +141,18 @@
         let fadeAlpha = 0;
         let fadeDirection = 1;
 
-        // --- MAP GRID (0 = Jalan, 1 = Tembok) ---
+        // --- MAP GRID BARU (0 = Jalan, 1 = Tembok) ---
+        // Penyesuaian berdasarkan gambar rute murni tanpa objek
         const mapGrid = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], // R0 (a1-p1)
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], // R1 (a2-p2)
-            [1,0,0,0,0,0,1,1,1,0,0,1,1,0,0,0], // R2 (a3-p3) - j3 is F
-            [0,0,1,1,0,1,0,0,0,1,0,0,1,0,0,0], // R3 (a4-p4) - a4 is H, p4 is N
+            [1,0,0,0,0,0,1,1,1,0,0,1,1,0,0,0], // R2 (a3-p3)
+            [0,0,1,1,0,1,0,0,0,1,0,0,1,0,1,0], // R3 (a4-p4)
             [1,1,0,0,0,1,0,1,0,1,1,0,0,0,1,1], // R4 (a5-p5)
-            [0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0], // R5 (a6-p6) - a6 spawn, p6 exit
+            [0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0], // R5 (a6-p6)
             [1,1,1,1,0,0,0,1,0,1,0,0,0,1,1,0], // R6 (a7-p7)
-            [0,0,0,1,0,1,0,0,1,0,1,1,0,1,0,0], // R7 (a8-p8) - j8 is N
-            [0,1,0,0,0,1,0,1,0,1,0,0,0,0,0,1]  // R8 (a9-p9) - a9 is O, h9 is C, k9 is H
+            [0,0,0,1,0,1,0,1,0,0,1,1,0,1,0,0], // R7 (a8-p8)
+            [0,1,0,0,0,1,0,0,1,1,0,0,0,0,0,1]  // R8 (a9-p9)
         ];
 
         // --- ITEMS & ENTITY DATA ---
@@ -187,7 +188,7 @@
             targetX: 15 * TILE_SIZE, targetY: 6 * TILE_SIZE,
             speed: 1.5,
             pathIdx: 0,
-            dir: 1, // 1 maju, -1 mundur
+            dir: 1, 
             isMoving: false,
             facingRight: false
         };
@@ -198,6 +199,12 @@
 
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
+            
+            // Tekan sembarang tombol keyboard untuk menutup help popup
+            if (currentState === STATE.HELP_PROMPT) {
+                currentState = STATE.PLAY;
+                return;
+            }
             if (currentState !== STATE.PLAY) return;
 
             if (key === 'w' || key === 'arrowup') activeKeys.up = true;
@@ -215,10 +222,22 @@
             if (key === 'd' || key === 'arrowright') activeKeys.right = false;
         });
 
+        // Event listener klik area manapun di luar canvas untuk menutup popup
+        document.addEventListener('pointerdown', (e) => {
+            if (currentState === STATE.HELP_PROMPT) {
+                currentState = STATE.PLAY;
+            }
+        });
+
         const addTouchControl = (id, key) => {
             const btn = document.getElementById(id);
             if(btn) {
-                btn.addEventListener('pointerdown', (e) => { e.preventDefault(); if(currentState === STATE.PLAY) activeKeys[key] = true; });
+                btn.addEventListener('pointerdown', (e) => { 
+                    e.preventDefault(); 
+                    e.stopPropagation(); // Mencegah event lari ke document
+                    if(currentState === STATE.HELP_PROMPT) { currentState = STATE.PLAY; return; }
+                    if(currentState === STATE.PLAY) activeKeys[key] = true; 
+                });
                 btn.addEventListener('pointerup', (e) => { e.preventDefault(); activeKeys[key] = false; });
                 btn.addEventListener('pointerleave', (e) => { e.preventDefault(); activeKeys[key] = false; });
             }
@@ -233,6 +252,8 @@
         if(btnActionElement) {
             btnActionElement.addEventListener('pointerdown', (e) => { 
                 e.preventDefault(); 
+                e.stopPropagation(); 
+                if(currentState === STATE.HELP_PROMPT) { currentState = STATE.PLAY; return; }
                 if(currentState === STATE.PLAY) handleAction(); 
             });
         }
@@ -243,7 +264,7 @@
         }
 
         function handleAction() {
-            // Cek apakah player berdiri di atas pintu exit (p6)
+            // Cek posisi pintu exit (p6)
             if (player.col === 15 && player.row === 5) {
                 if (checklists[0] && checklists[1] && checklists[2]) {
                     currentState = STATE.CLEARED;
@@ -254,7 +275,7 @@
                 }
             }
 
-            // Cek Item di bawah player
+            // Cek Item
             let item = items.find(i => i.c === player.col && i.r === player.row && !i.collected);
             if (item) {
                 if (item.trueItem) {
@@ -263,8 +284,9 @@
                     checklists[item.uiIdx] = true;
                     spawnFloatingText(`+${item.mass} amu`, player.x, player.y, "#00ff00");
                 } else {
+                    item.collected = true; // PERBAIKAN: Item yang salah sekarang menghilang
                     spawnFloatingText("bukan yang ini :(", player.x, player.y, "#ff0000");
-                    errorUITimer = 180; // Tampilkan statpmmgx.png selama ~3 detik (asumsi 60fps)
+                    errorUITimer = 180; 
                 }
             }
         }
@@ -297,20 +319,17 @@
         }
 
         function resetStage() {
-            // Reset Player
             player.col = 0; player.row = 5;
             player.x = 0; player.y = 5 * TILE_SIZE;
             player.targetX = player.x; player.targetY = player.y;
             isPlayerMoving = false;
             
-            // Reset Entity
             entity.pathIdx = 0; entity.dir = 1;
             entity.col = 15; entity.row = 6;
             entity.x = 15 * TILE_SIZE; entity.y = 6 * TILE_SIZE;
             entity.targetX = entity.x; entity.targetY = entity.y;
             entity.isMoving = false;
             
-            // Reset Item & Stat
             items.forEach(i => i.collected = false);
             totalMass = 0;
             checklists = [false, false, false, false, false, false];
@@ -336,17 +355,16 @@
 
             if (currentState !== STATE.PLAY) return;
 
-            // Timer UI Error
             if (errorUITimer > 0) errorUITimer--;
 
-            // Hitbox Deteksi Entity (Jarak 1 Tile/Bersentuhan)
+            // Hitbox Entity (Jarak 1 Tile/Bersentuhan)
             let dist = Math.abs(player.col - entity.col) + Math.abs(player.row - entity.row);
             if (dist <= 1 && currentState === STATE.PLAY) {
                 currentState = STATE.DYING;
                 return;
             }
 
-            // Update Animasi Player
+            // Animasi Player
             if (isPlayerMoving) {
                 let dx = player.targetX - player.x;
                 let dy = player.targetY - player.y;
@@ -367,7 +385,7 @@
                 if (dCol !== 0 || dRow !== 0) movePlayer(dCol, dRow);
             }
 
-            // Update Animasi & Rute Entity
+            // Animasi Entity
             if (entity.isMoving) {
                 let edx = entity.targetX - entity.x;
                 let edy = entity.targetY - entity.y;
@@ -381,7 +399,7 @@
             } else {
                 let nextIdx = entity.pathIdx + entity.dir;
                 if (nextIdx >= entityPath.length || nextIdx < 0) {
-                    entity.dir *= -1; // Balik arah jika mentok rute
+                    entity.dir *= -1; 
                     nextIdx = entity.pathIdx + entity.dir;
                 }
                 let nextNode = entityPath[nextIdx];
@@ -397,7 +415,6 @@
                 entity.isMoving = true;
             }
 
-            // Update Floating Texts
             for (let i = floatingTexts.length - 1; i >= 0; i--) {
                 floatingTexts[i].y -= 0.5;
                 floatingTexts[i].life--;
@@ -409,17 +426,14 @@
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Layer Dasar
             if (assets.bg.complete) ctx.drawImage(assets.bg, 0, 0, 512, 288);
 
-            // Render Items
             items.forEach(item => {
                 if (!item.collected && item.img.complete) {
                     ctx.drawImage(item.img, item.c * TILE_SIZE, item.r * TILE_SIZE, 32, 32);
                 }
             });
 
-            // Render Entity dengan flip
             if (assets.entity.complete) {
                 ctx.save();
                 if (!entity.facingRight) {
@@ -432,7 +446,6 @@
                 ctx.restore();
             }
 
-            // Render Player dengan flip
             const currentCharAsset = isPlayerMoving ? assets.charWalk : assets.charStay;
             if (currentCharAsset.complete) {
                 ctx.save(); 
@@ -446,7 +459,6 @@
                 ctx.restore(); 
             }
 
-            // Layer Status UI
             if (assets.stat.complete) ctx.drawImage(assets.stat, 0, 0, 512, 288);
             if (assets.stat1.complete) ctx.drawImage(assets.stat1, 0, 0, 512, 288);
 
@@ -457,7 +469,6 @@
             }
 
             if (assets.checklist.complete) {
-                // e2=128(Idx 0), f2=160(Idx 1), g2=192(Idx 2)
                 for(let i=0; i<3; i++) {
                     if(checklists[i]) {
                         ctx.drawImage(assets.checklist, 128 + (i * 32), 32, 32, 32); 
@@ -471,12 +482,10 @@
             ctx.textBaseline = "middle";
             ctx.fillText(`${totalMass}`, 330, 48); 
 
-            // Render Error UI
             if (errorUITimer > 0 && assets.statError.complete) {
                 ctx.drawImage(assets.statError, 0, 0, 512, 288);
             }
 
-            // Render Floating Texts
             ctx.textAlign = "center";
             floatingTexts.forEach(ft => {
                 ctx.fillStyle = ft.color;
@@ -485,13 +494,11 @@
                 ctx.globalAlpha = 1.0;
             });
 
-            // Efek Fade to Black
             if (fadeAlpha > 0) {
                 ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // Popup UI
             if (currentState === STATE.EXIT_PROMPT && assets.popupExit.complete) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; 
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -518,13 +525,15 @@
             }
         }
 
-        // --- MOUSE/TOUCH KLIK UI ---
+        // --- KLIK KANVAS ---
         canvas.addEventListener('pointerdown', (e) => {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
             const x = (e.clientX - rect.left) * scaleX;
             const y = (e.clientY - rect.top) * scaleY;
+
+            e.stopPropagation(); // Cegah tumpang tindih dgn listener document
 
             if (currentState === STATE.PLAY) {
                 if (x >= 480 && x <= 512 && y >= 0 && y <= 32) currentState = STATE.EXIT_PROMPT;
@@ -534,10 +543,11 @@
                 if (x >= 160 && x <= 256 && y >= 160 && y <= 192) console.log("Keluar dari game!");
                 else if (x >= 256 && x <= 352 && y >= 160 && y <= 192) currentState = STATE.PLAY;
             }
-            else if (currentState === STATE.HELP_PROMPT) currentState = STATE.PLAY;
+            else if (currentState === STATE.HELP_PROMPT) {
+                currentState = STATE.PLAY;
+            }
         });
 
-        // Jalankan game
         function gameLoop() {
             update();
             render();
