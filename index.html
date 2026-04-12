@@ -8,14 +8,16 @@
     <style>
         body {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #1e1e2e;
+            justify-content: center; /* Membuat elemen di tengah secara vertikal */
+            align-items: center;     /* Membuat elemen di tengah secara horizontal */
+            height: 100vh;           /* Mengambil 100% tinggi viewport/layar */
+            background-color: #1a1a1a; /* Warna baru menyesuaikan gambar unggahan Anda */
             margin: 0;
-            padding: 20px;
+            padding: 0;
             font-family: 'VT323', monospace;
             color: white;
             touch-action: none;
+            overflow: hidden;        /* Mencegah layar bisa di-scroll */
         }
 
         /* Container dikunci dengan rasio 16:9 agar tombol overlay tidak lari */
@@ -24,7 +26,6 @@
             width: 100%;
             max-width: 512px;
             aspect-ratio: 16 / 9;
-            margin: 0 auto;
         }
 
         #gameCanvas {
@@ -60,7 +61,6 @@
         #btn-left { top: 33.33%; left: 0; }
         #btn-right { top: 33.33%; right: 0; }
 
-        /* PERBAIKAN: CSS digabung langsung ke ID agar tidak ada konflik ukuran */
         #btn-action {
             position: absolute;
             bottom: 5px;
@@ -141,7 +141,7 @@
             y: 5 * TILE_SIZE,
             targetX: 0,
             targetY: 5 * TILE_SIZE,
-            speed: 2.5 // PERBAIKAN: Kecepatan dinaikkan menjadi 2.5
+            speed: 2.5 
         };
 
         const activeKeys = { up: false, down: false, left: false, right: false };
