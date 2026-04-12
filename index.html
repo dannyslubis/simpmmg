@@ -39,12 +39,12 @@
         /* --- UI Controller Overlay --- */
         .dpad-container {
             position: absolute;
-            bottom: 5px; /* Diturunkan merapat ke bawah */
-            left: 5px;   /* Dirapatkan ke kiri */
-            width: 100px; /* Diperkecil proporsional */
+            bottom: 5px;
+            left: 5px;
+            width: 100px;
             height: 100px;
             background: url('keywasd.png') no-repeat center/contain;
-            opacity: 0.4; /* Sedikit lebih transparan */
+            opacity: 0.4;
             z-index: 10;
         }
 
@@ -60,22 +60,17 @@
         #btn-left { top: 33.33%; left: 0; }
         #btn-right { top: 33.33%; right: 0; }
 
-        .action-container {
-            position: absolute;
-            bottom: 5px;  /* Diturunkan merapat ke bawah */
-            right: 5px;   /* Dirapatkan ke kanan */
-            width: 60px;  /* Diperkecil agar tidak menutupi layar */
-            height: 60px;
-            background: url('keyaction.png') no-repeat center/contain;
-            opacity: 0.4; /* Sedikit lebih transparan */
-            cursor: pointer;
-            z-index: 10;
-        }
-        
+        /* PERBAIKAN: CSS digabung langsung ke ID agar tidak ada konflik ukuran */
         #btn-action {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            bottom: 5px;
+            right: 5px;
+            width: 60px;
+            height: 60px;
+            background: url('keyaction.png') no-repeat center/contain;
+            opacity: 0.4;
+            cursor: pointer;
+            z-index: 10;
         }
     </style>
 </head>
@@ -90,7 +85,7 @@
             <div id="btn-right" class="dpad-hitbox"></div>
             <div id="btn-down" class="dpad-hitbox"></div>
         </div>
-        <div class="action-container" id="btn-action"></div>
+        <div id="btn-action"></div>
     </div>
 
     <script>
@@ -146,7 +141,7 @@
             y: 5 * TILE_SIZE,
             targetX: 0,
             targetY: 5 * TILE_SIZE,
-            speed: 1.5 // Diperlambat agar gerakannya lebih terlihat
+            speed: 2.5 // PERBAIKAN: Kecepatan dinaikkan menjadi 2.5
         };
 
         const activeKeys = { up: false, down: false, left: false, right: false };
