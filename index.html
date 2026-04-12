@@ -8,19 +8,18 @@
     <style>
         body {
             display: flex;
-            justify-content: center; /* Membuat elemen di tengah secara vertikal */
-            align-items: center;     /* Membuat elemen di tengah secara horizontal */
-            height: 100vh;           /* Mengambil 100% tinggi viewport/layar */
-            background-color: #1a1a1a; /* Warna baru menyesuaikan gambar unggahan Anda */
+            justify-content: center; 
+            align-items: center;     
+            height: 100vh;           
+            background-color: #1a1a1a; 
             margin: 0;
             padding: 0;
             font-family: 'VT323', monospace;
             color: white;
             touch-action: none;
-            overflow: hidden;        /* Mencegah layar bisa di-scroll */
+            overflow: hidden;        
         }
 
-        /* Container dikunci dengan rasio 16:9 agar tombol overlay tidak lari */
         #gameContainer {
             position: relative;
             width: 100%;
@@ -141,7 +140,8 @@
             y: 5 * TILE_SIZE,
             targetX: 0,
             targetY: 5 * TILE_SIZE,
-            speed: 2.5 
+            speed: 2.5,
+            facingRight: true // Penambahan properti arah hadap
         };
 
         const activeKeys = { up: false, down: false, left: false, right: false };
@@ -193,6 +193,10 @@
         }
 
         function movePlayer(dCol, dRow) {
+            // Update arah hadap jika bergerak ke kiri/kanan
+            if (dCol === 1) player.facingRight = true;
+            else if (dCol === -1) player.facingRight = false;
+
             let nextCol = player.col + dCol;
             let nextRow = player.row + dRow;
 
@@ -275,20 +279,37 @@
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // 1. Layer Map Latar
             if (assets.bg.complete) ctx.drawImage(assets.bg, 0, 0, 512, 288);
 
+            // 2. Render Karakter dengan Pengecekan Arah
             const currentCharAsset = isMoving ? assets.charWalk : assets.charStay;
-            if (currentCharAsset.complete) ctx.drawImage(currentCharAsset, player.x, player.y, 32, 32);
+            if (currentCharAsset.complete) {
+                ctx.save(); // Simpan state canvas saat ini
+                if (!player.facingRight) {
+                    // Geser origin ke titik tengah karakter, flip X, lalu gambar
+                    ctx.translate(player.x + 16, player.y + 16);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(currentCharAsset, -16, -16, 32, 32);
+                } else {
+                    // Gambar normal menghadap kanan
+                    ctx.drawImage(currentCharAsset, player.x, player.y, 32, 32);
+                }
+                ctx.restore(); // Kembalikan state canvas agar elemen lain tidak ikut terbalik
+            }
 
+            // 3. Layer Status & UI
             if (assets.stat.complete) ctx.drawImage(assets.stat, 0, 0, 512, 288);
             if (assets.stat1.complete) ctx.drawImage(assets.stat1, 0, 0, 512, 288);
 
+            // 4. Layer Nyawa
             if (assets.lifebar.complete) {
                 if(lives[0]) ctx.drawImage(assets.lifebar, 32, 32, 32, 32);  
                 if(lives[1]) ctx.drawImage(assets.lifebar, 64, 32, 32, 32);  
                 if(lives[2]) ctx.drawImage(assets.lifebar, 96, 32, 32, 32);  
             }
 
+            // 5. Layer Checklist Misi
             if (assets.checklist.complete) {
                 for(let i=0; i<checklists.length; i++) {
                     if(checklists[i]) {
@@ -297,12 +318,14 @@
                 }
             }
 
+            // 6. Teks Massa Total
             ctx.fillStyle = "#dedede";
             ctx.font = "24px 'VT323', monospace";
             ctx.textAlign = "left";
             ctx.textBaseline = "middle";
             ctx.fillText(`${totalMass}`, 330, 48); 
 
+            // 7. Layer Menu Pop Up
             if (currentState === STATE.EXIT_PROMPT && assets.popupExit.complete) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; 
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
