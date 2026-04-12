@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Minigame Stoikiometri - Stage 1 & 2</title>
+    <title>Minigame Stoikiometri - Skripsi</title>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         body {
@@ -118,20 +118,16 @@
         assets.itemH.src = 'pmmh1.png';
         assets.itemS.src = 'pmms32.png';
 
-        // --- DATABASE LEVEL ---
+        // --- DATABASE LEVEL LENGKAP ---
         const STAGES = [
             {   // Index 0: Stage 1 (H2O)
                 name: "1", bgSrc: 'kanvaspmmg1.png', stat1Src: 'statpmmg1.png',
-                spawn: {c: 0, r: 5}, exit: {c: 15, r: 5},
+                spawn: {c: 0, r: 5}, exit: {c: 15, r: 5}, targetItems: 3, isLoopPath: false,
                 grid: [
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [1,0,0,0,0,0,1,1,1,0,0,1,1,0,0,0], 
-                    [0,0,1,1,0,1,0,0,0,1,0,0,1,0,1,0],
-                    [1,1,0,0,0,1,0,1,0,1,1,0,0,0,1,1], 
-                    [0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0],
-                    [1,1,1,1,0,0,0,1,0,1,0,0,0,1,1,0], 
-                    [0,0,0,1,0,1,0,1,0,0,1,1,0,1,0,0],
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,0,0,1,1,1,0,0,1,1,0,0,0], [0,0,1,1,0,1,0,0,0,1,0,0,1,0,1,0],
+                    [1,1,0,0,0,1,0,1,0,1,1,0,0,0,1,1], [0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0],
+                    [1,1,1,1,0,0,0,1,0,1,0,0,0,1,1,0], [0,0,0,1,0,1,0,1,0,0,1,1,0,1,0,0],
                     [0,1,0,0,0,1,0,0,1,1,0,0,0,0,0,1]
                 ],
                 items: [
@@ -147,17 +143,13 @@
             },
             {   // Index 1: Stage 2A (CO2)
                 name: "2A", bgSrc: 'kanvaspmmg2a.png', stat1Src: 'statpmmg2a.png',
-                spawn: {c: 0, r: 3}, exit: {c: 15, r: 6},
+                spawn: {c: 0, r: 3}, exit: {c: 15, r: 6}, targetItems: 3, isLoopPath: false,
                 grid: [
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0], // R3
-                    [0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1], // R4
-                    [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1], // R5
-                    [0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1], // R6
-                    [0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0], // R7
-                    [1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1], // R8
-                    [1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0]  // R9
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,1,1,0,0,0,0,0,1,0,0,0,0], [0,1,1,0,0,0,0,1,1,1,1,0,0,1,0,1],
+                    [0,1,0,0,0,1,0,0,0,1,1,0,1,0,0,1], [0,1,0,1,0,0,0,1,0,1,0,1,1,0,1,1],
+                    [0,0,0,1,1,0,1,0,0,0,0,0,1,0,0,0], [1,0,1,0,0,1,0,0,0,1,1,0,1,0,1,1],
+                    [1,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0]  
                 ],
                 items: [
                     { c: 1, r: 2, trueItem: true,  mass: 12, imgKey: 'itemC', uiIdx: 2 },
@@ -172,17 +164,13 @@
             },
             {   // Index 2: Stage 2B (NO2)
                 name: "2B", bgSrc: 'kanvaspmmg2b.png', stat1Src: 'statpmmg2b.png',
-                spawn: {c: 0, r: 2}, exit: {c: 15, r: 2},
+                spawn: {c: 0, r: 2}, exit: {c: 15, r: 2}, targetItems: 3, isLoopPath: false,
                 grid: [
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0], // R3
-                    [0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0], // R4
-                    [1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1], // R5
-                    [1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0], // R6
-                    [0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1], // R7
-                    [0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0], // R8
-                    [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1]  // R9
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [0,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0], [0,0,0,1,1,0,1,0,0,1,1,1,1,0,0,0],
+                    [1,1,1,0,0,1,0,0,1,1,0,0,0,0,1,1], [1,0,0,0,1,1,1,0,0,0,0,1,0,0,0,0],
+                    [0,1,1,0,0,0,0,0,0,1,0,1,1,0,0,1], [0,0,1,1,1,1,1,0,0,0,1,0,0,1,0,0],
+                    [1,0,0,0,1,0,0,0,1,0,0,1,0,0,0,1]  
                 ],
                 items: [
                     { c: 10, r: 8, trueItem: false, mass: 12, imgKey: 'itemC' },
@@ -197,17 +185,13 @@
             },
             {   // Index 3: Stage 2C (SO2)
                 name: "2C", bgSrc: 'kanvaspmmg2c.png', stat1Src: 'statpmmg2c.png',
-                spawn: {c: 0, r: 6}, exit: {c: 15, r: 7},
+                spawn: {c: 0, r: 6}, exit: {c: 15, r: 7}, targetItems: 3, isLoopPath: false,
                 grid: [
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 
-                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0], // R3
-                    [0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0], // R4
-                    [1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0], // R5
-                    [0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0], // R6
-                    [0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1], // R7
-                    [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0], // R8
-                    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]  // R9
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [0,0,0,0,0,0,1,0,0,0,1,0,0,1,0,0], [0,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0],
+                    [1,0,0,0,0,1,0,0,0,1,1,0,0,0,1,0], [1,0,1,0,0,0,1,1,1,1,0,0,1,0,0,0],
+                    [0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1], [1,1,0,0,1,1,1,1,1,1,1,0,0,1,0,0],
+                    [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1]  
                 ],
                 items: [
                     { c: 0, r: 3, trueItem: false, mass: 12, imgKey: 'itemC' },
@@ -219,6 +203,34 @@
                     { c: 13, r: 8, trueItem: true,  mass: 32, imgKey: 'itemS', uiIdx: 0 }
                 ],
                 entityPath: [ {c: 14, r: 2}, {c: 15, r: 2}, {c: 15, r: 3}, {c: 15, r: 4}, {c: 15, r: 5} ]
+            },
+            {   // Index 4: Stage 3 (CH3OH) - FINAL STAGE
+                name: "3", bgSrc: 'kanvaspmmg3.png', stat1Src: 'statpmmg3.png',
+                spawn: {c: 0, r: 8}, exit: {c: 15, r: 2}, targetItems: 6, isLoopPath: true,
+                grid: [
+                    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                    [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0], [0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,0],
+                    [1,1,0,0,0,0,1,0,1,0,1,0,1,0,1,1], [1,1,0,1,0,0,1,0,0,0,0,1,1,0,1,0],
+                    [1,1,1,1,0,0,0,0,1,0,0,0,1,1,0,1], [1,1,0,0,1,0,1,0,1,1,1,0,1,0,1,1],
+                    [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1]  
+                ],
+                items: [
+                    { c: 4, r: 8, trueItem: true,  mass: 12, imgKey: 'itemC', uiIdx: 1 }, // f2
+                    { c: 13, r: 2, trueItem: true,  mass: 16, imgKey: 'itemO', uiIdx: 0 }, // e2
+                    { c: 3, r: 7, trueItem: false, mass: 14, imgKey: 'itemN' },
+                    { c: 14, r: 8, trueItem: false, mass: 19, imgKey: 'itemF' },
+                    { c: 3, r: 2, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 2 }, // g2
+                    { c: 15, r: 5, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 3 }, // h2
+                    { c: 9, r: 6, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 4 }, // i2
+                    { c: 12, r: 8, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 5 }  // j2
+                ],
+                // Rute memutar (Loop continuous)
+                entityPath: [ 
+                    {c:11,r:2}, {c:11,r:3}, {c:11,r:4}, {c:11,r:5}, {c:11,r:6}, {c:11,r:7}, {c:11,r:8},
+                    {c:10,r:8}, {c:9,r:8}, {c:8,r:8}, {c:7,r:8}, {c:6,r:8}, {c:5,r:8},
+                    {c:5,r:7}, {c:5,r:6}, {c:5,r:5}, {c:5,r:4}, {c:5,r:3}, {c:5,r:2},
+                    {c:6,r:2}, {c:7,r:2}, {c:8,r:2}, {c:9,r:2}, {c:10,r:2} 
+                ]
             }
         ];
 
@@ -235,7 +247,7 @@
         let errorUITimer = 0;
         let floatingTexts = [];
         
-        const STATE = { PLAY: 0, EXIT_PROMPT: 1, HELP_PROMPT: 2, GAMEOVER: 3, DYING: 4, CLEARED: 5 };
+        const STATE = { PLAY: 0, EXIT_PROMPT: 1, HELP_PROMPT: 2, GAMEOVER: 3, DYING: 4, CLEARED: 5, VICTORY: 6 };
         let currentState = STATE.PLAY;
         let fadeAlpha = 0;
         let fadeDirection = 1;
@@ -341,10 +353,16 @@
         }
 
         function handleAction() {
-            let currentExit = STAGES[currentStageIndex].exit;
-            if (player.col === currentExit.c && player.row === currentExit.r) {
-                if (checklists[0] && checklists[1] && checklists[2]) {
-                    currentState = STATE.CLEARED;
+            let s = STAGES[currentStageIndex];
+            if (player.col === s.exit.c && player.row === s.exit.r) {
+                // Cek dinamis berdasarkan jumlah item target di stage tersebut
+                let allCollected = true;
+                for(let i=0; i<s.targetItems; i++) {
+                    if (!checklists[i]) allCollected = false;
+                }
+                
+                if (allCollected) {
+                    currentState = (currentStageIndex === 4) ? STATE.VICTORY : STATE.CLEARED;
                     return;
                 } else {
                     spawnFloatingText("Misi belum selesai!", player.x, player.y, "#ffff00");
@@ -411,6 +429,7 @@
             if (currentState !== STATE.PLAY) return;
             if (errorUITimer > 0) errorUITimer--;
 
+            // Hitbox Entity (Berlaku untuk rute bolak balik maupun Loop)
             let dist = Math.abs(player.col - entity.col) + Math.abs(player.row - entity.row);
             if (dist <= 1 && currentState === STATE.PLAY) {
                 currentState = STATE.DYING;
@@ -443,11 +462,20 @@
 
                 if (entity.x === entity.targetX && entity.y === entity.targetY) entity.isMoving = false;
             } else {
-                let nextIdx = entity.pathIdx + entity.dir;
-                if (nextIdx >= entityPath.length || nextIdx < 0) {
-                    entity.dir *= -1; 
+                let s = STAGES[currentStageIndex];
+                let nextIdx;
+                
+                // Cek tipe rute pergerakan (Looping murni vs Bolak Balik)
+                if (s.isLoopPath) {
+                    nextIdx = (entity.pathIdx + 1) % entityPath.length;
+                } else {
                     nextIdx = entity.pathIdx + entity.dir;
+                    if (nextIdx >= entityPath.length || nextIdx < 0) {
+                        entity.dir *= -1; 
+                        nextIdx = entity.pathIdx + entity.dir;
+                    }
                 }
+                
                 let nextNode = entityPath[nextIdx];
                 
                 if (nextNode.c > entity.col) entity.facingRight = true;
@@ -516,7 +544,9 @@
             }
 
             if (assets.checklist.complete) {
-                for(let i=0; i<3; i++) {
+                let s = STAGES[currentStageIndex];
+                // Tampilkan jumlah checklist sesuai target items (bisa 3 atau 6)
+                for(let i=0; i<s.targetItems; i++) {
                     if(checklists[i]) ctx.drawImage(assets.checklist, 128 + (i * 32), 32, 32, 32); 
                 }
             }
@@ -544,6 +574,7 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
+            // --- MENU & POPUPS ---
             if (currentState === STATE.EXIT_PROMPT && assets.popupExit.complete) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; 
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -564,11 +595,24 @@
                 ctx.font = "18px 'VT323', monospace";
                 ctx.fillText(`Ketuk layar untuk melanjutkan`, 256, 164);
             }
+            else if (currentState === STATE.VICTORY) {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#ffff00";
+                ctx.textAlign = "center";
+                ctx.font = "32px 'VT323', monospace";
+                ctx.fillText(`SELAMAT!`, 256, 124);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "18px 'VT323', monospace";
+                ctx.fillText(`Semua Molekul Berhasil Disusun`, 256, 154);
+                // Tempat menaruh Redirect atau Reset jika user ketuk layarnya nanti
+            }
             else if (currentState === STATE.GAMEOVER) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "#ff0000";
                 ctx.textAlign = "center";
+                ctx.font = "32px 'VT323', monospace";
                 ctx.fillText("GAME OVER", 256, 144);
             }
         }
@@ -595,12 +639,18 @@
             
             else if (currentState === STATE.CLEARED) {
                 if (currentStageIndex === 0) {
+                    // Random Stage 2 (Index 1, 2, atau 3)
                     let randomStage2 = Math.floor(Math.random() * 3) + 1; 
                     loadStage(randomStage2);
                     currentState = STATE.PLAY;
-                } else {
-                    console.log("Menunggu data Stage 3...");
+                } else if (currentStageIndex >= 1 && currentStageIndex <= 3) {
+                    // Meluncur ke Stage 3 (Index 4)
+                    loadStage(4);
+                    currentState = STATE.PLAY;
                 }
+            }
+            else if (currentState === STATE.VICTORY) {
+                console.log("Mini Game Selesai - Anda bisa redirect ke menu skripsi di sini.");
             }
         });
 
