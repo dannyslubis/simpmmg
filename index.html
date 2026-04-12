@@ -118,7 +118,7 @@
         assets.itemH.src = 'pmmh1.png';
         assets.itemS.src = 'pmms32.png';
 
-        // --- DATABASE LEVEL (Data-Driven Architecture) ---
+        // --- DATABASE LEVEL ---
         const STAGES = [
             {   // Index 0: Stage 1 (H2O)
                 name: "1", bgSrc: 'kanvaspmmg1.png', stat1Src: 'statpmmg1.png',
@@ -146,10 +146,13 @@
                 spawn: {c: 0, r: 3}, exit: {c: 15, r: 6},
                 grid: [
                     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0], [1,1,1,0,0,0,0,1,1,1,1,0,0,1,0,1],
-                    [0,1,0,1,0,1,1,0,0,1,1,0,1,0,0,1], [0,1,0,1,0,0,0,1,1,0,0,1,1,0,1,1],
-                    [0,0,0,1,1,0,1,0,0,0,1,0,1,0,0,1], [1,1,1,0,0,1,0,0,1,0,0,0,1,0,1,1],
-                    [1,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0]
+                    [1,0,0,0,1,1,1,0,0,0,0,1,0,0,0,0], 
+                    [0,1,1,1,0,0,0,1,1,1,0,0,1,1,0,1],
+                    [1,1,0,0,0,1,0,0,0,1,1,0,1,0,0,1], 
+                    [0,1,0,1,0,1,0,1,1,1,0,1,0,0,1,1], 
+                    [1,0,0,1,1,0,1,0,0,0,0,0,1,1,0,0], 
+                    [1,1,1,0,0,1,0,0,1,1,1,0,1,0,0,1],
+                    [1,0,0,1,0,1,0,1,1,0,0,0,1,0,0,0]
                 ],
                 items: [
                     { c: 1, r: 2, trueItem: true,  mass: 12, imgKey: 'itemC', uiIdx: 2 },
@@ -167,10 +170,13 @@
                 spawn: {c: 0, r: 2}, exit: {c: 15, r: 2},
                 grid: [
                     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [0,1,0,0,0,0,0,1,0,0,1,0,0,0,0,1], [0,0,0,1,1,0,1,0,0,1,0,1,1,0,0,0],
-                    [1,0,1,1,0,0,0,0,1,1,0,0,0,1,1,1], [1,0,0,0,1,1,1,0,0,0,0,1,0,0,0,0],
-                    [0,1,1,0,0,0,0,0,0,1,0,0,1,1,0,1], [0,0,1,1,1,1,1,0,0,0,1,0,0,1,0,0],
-                    [1,0,0,0,1,0,0,0,1,0,0,1,0,0,0,0]
+                    [0,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0], 
+                    [0,0,0,1,1,0,1,0,0,1,0,1,1,0,0,0],
+                    [1,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1], 
+                    [1,0,0,0,1,1,1,0,0,0,0,1,0,0,0,0],
+                    [0,1,1,0,0,0,0,0,0,1,0,0,1,1,0,1], 
+                    [0,0,1,1,1,1,1,0,0,0,1,0,0,1,0,0],
+                    [1,0,0,0,1,0,0,0,1,0,0,1,0,0,0,1]
                 ],
                 items: [
                     { c: 10, r: 8, trueItem: false, mass: 12, imgKey: 'itemC' },
@@ -188,9 +194,12 @@
                 spawn: {c: 0, r: 6}, exit: {c: 15, r: 7},
                 grid: [
                     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                    [0,0,0,0,0,0,1,0,0,0,1,0,0,1,0,0], [0,1,1,0,1,0,0,0,1,0,1,0,1,0,1,0],
-                    [1,0,0,0,0,1,0,0,0,0,1,0,0,0,1,0], [1,0,1,0,0,0,1,1,0,0,0,0,1,0,0,0],
-                    [0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1], [1,1,0,0,1,1,1,1,1,1,1,0,0,1,0,0],
+                    [0,0,0,0,0,0,1,0,0,0,1,0,0,1,0,0], 
+                    [0,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0],
+                    [1,0,0,0,0,1,0,0,0,1,1,0,0,0,1,0], 
+                    [1,0,1,0,0,0,1,1,1,1,0,0,1,0,0,0],
+                    [0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,1], 
+                    [1,1,0,0,1,1,1,1,1,1,1,0,0,1,0,0],
                     [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1]
                 ],
                 items: [
@@ -208,7 +217,7 @@
 
         // --- GLOBAL STATE ---
         const TILE_SIZE = 32;
-        let currentStageIndex = 0; // Mulai dari Stage 1
+        let currentStageIndex = 0; 
         let mapGrid = [];
         let items = [];
         let entityPath = [];
@@ -232,12 +241,10 @@
             currentStageIndex = index;
             let s = STAGES[index];
             
-            // Muat Latar & Stat Misi
             assets.bg.src = s.bgSrc;
             assets.stat1.src = s.stat1Src;
             mapGrid = s.grid;
             
-            // Muat Spawn Player
             player.col = s.spawn.c;
             player.row = s.spawn.r;
             player.x = player.col * TILE_SIZE;
@@ -247,10 +254,8 @@
             player.facingRight = true;
             isPlayerMoving = false;
             
-            // Render ulang Item dari resep awal Stage (reset state)
             items = s.items.map(item => ({...item, collected: false}));
             
-            // Muat Rute Entity
             entityPath = s.entityPath;
             entity.col = entityPath[0].c;
             entity.row = entityPath[0].r;
@@ -262,7 +267,6 @@
             entity.dir = 1;
             entity.isMoving = false;
 
-            // Reset Parameter UI Game
             totalMass = 0;
             checklists = [false, false, false, false, false, false];
             errorUITimer = 0;
@@ -330,7 +334,6 @@
         }
 
         function handleAction() {
-            // Cek kondisi Pintu Keluar
             let currentExit = STAGES[currentStageIndex].exit;
             if (player.col === currentExit.c && player.row === currentExit.r) {
                 if (checklists[0] && checklists[1] && checklists[2]) {
@@ -341,10 +344,9 @@
                 }
             }
 
-            // Cek Koleksi Item
             let item = items.find(i => i.c === player.col && i.r === player.row && !i.collected);
             if (item) {
-                item.collected = true; // Item ditarik/dihilangkan dari map
+                item.collected = true; 
                 if (item.trueItem) {
                     totalMass += item.mass;
                     checklists[item.uiIdx] = true;
@@ -390,7 +392,6 @@
                 if (fadeAlpha >= 1 && fadeDirection === 1) {
                     fadeDirection = -1;
                     takeDamage();
-                    // Jika mati, reload map yang SAAT INI dimainkan (tidak ngacak map lain)
                     if (currentState !== STATE.GAMEOVER) loadStage(currentStageIndex);
                 } else if (fadeAlpha <= 0 && fadeDirection === -1) {
                     fadeAlpha = 0;
@@ -403,14 +404,12 @@
             if (currentState !== STATE.PLAY) return;
             if (errorUITimer > 0) errorUITimer--;
 
-            // Hitbox Entity Jarak 1 Tile
             let dist = Math.abs(player.col - entity.col) + Math.abs(player.row - entity.row);
             if (dist <= 1 && currentState === STATE.PLAY) {
                 currentState = STATE.DYING;
                 return;
             }
 
-            // Animasi Player
             if (isPlayerMoving) {
                 let dx = player.targetX - player.x;
                 let dy = player.targetY - player.y;
@@ -428,7 +427,6 @@
                 if (dCol !== 0 || dRow !== 0) movePlayer(dCol, dRow);
             }
 
-            // Animasi Entity
             if (entity.isMoving) {
                 let edx = entity.targetX - entity.x;
                 let edy = entity.targetY - entity.y;
@@ -456,7 +454,6 @@
                 entity.isMoving = true;
             }
 
-            // Teks melayang
             for (let i = floatingTexts.length - 1; i >= 0; i--) {
                 floatingTexts[i].y -= 0.5;
                 floatingTexts[i].life--;
@@ -470,7 +467,6 @@
 
             if (assets.bg.complete) ctx.drawImage(assets.bg, 0, 0, 512, 288);
 
-            // Render Item dari Database Level
             items.forEach(item => {
                 let imgObj = assets[item.imgKey];
                 if (!item.collected && imgObj && imgObj.complete) {
@@ -541,7 +537,6 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // --- MENU POPUPS ---
             if (currentState === STATE.EXIT_PROMPT && assets.popupExit.complete) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; 
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -591,21 +586,17 @@
             }
             else if (currentState === STATE.HELP_PROMPT) currentState = STATE.PLAY;
             
-            // --- LOGIKA TRANSISI STAGE ACAK ---
             else if (currentState === STATE.CLEARED) {
                 if (currentStageIndex === 0) {
-                    // Jika menang Stage 1, kocok angka 1, 2, atau 3 (untuk index Stage 2A, 2B, 2C)
                     let randomStage2 = Math.floor(Math.random() * 3) + 1; 
                     loadStage(randomStage2);
                     currentState = STATE.PLAY;
                 } else {
-                    // Jika menang Stage 2, arahkan ke Stage 3 (Saat ini belum ada datanya)
                     console.log("Menunggu data Stage 3...");
                 }
             }
         });
 
-        // Initialize First Level
         loadStage(0);
 
         function gameLoop() {
