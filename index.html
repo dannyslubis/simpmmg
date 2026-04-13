@@ -10,7 +10,9 @@
             display: flex;
             justify-content: center; 
             align-items: center;     
-            height: 100vh;           
+            height: 100vh;
+            height: 100svh;
+            width: 100vw;
             background-color: #1a1a1a; 
             margin: 0;
             padding: 0;
@@ -23,7 +25,10 @@
         #gameContainer {
             position: relative;
             width: 100%;
-            max-width: 512px;
+            height: 100%;
+            max-width: calc(100vh * (16 / 9));
+            max-width: calc(100svh * (16 / 9));
+            max-height: calc(100vw * (9 / 16));
             aspect-ratio: 16 / 9;
         }
 
@@ -39,10 +44,10 @@
         /* --- UI Controller Overlay --- */
         .dpad-container {
             position: absolute;
-            bottom: 5px;
-            left: 5px;
-            width: 100px;
-            height: 100px;
+            bottom: 4%;
+            left: 2%;
+            height: 35%; 
+            aspect-ratio: 1 / 1;
             background: url('keywasd.png') no-repeat center/contain;
             opacity: 0.4;
             z-index: 10;
@@ -62,10 +67,10 @@
 
         #btn-action {
             position: absolute;
-            bottom: 5px;
-            right: 5px;
-            width: 60px;
-            height: 60px;
+            bottom: 4%;
+            right: 2%;
+            height: 22%; 
+            aspect-ratio: 1 / 1;
             background: url('keyaction.png') no-repeat center/contain;
             opacity: 0.4;
             cursor: pointer;
@@ -91,37 +96,55 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // --- ASSET MANAGER ---
-        const assets = {
-            bg: new Image(), stat: new Image(), stat1: new Image(), statError: new Image(),
-            charStay: new Image(), charWalk: new Image(), lifebar: new Image(), checklist: new Image(),
-            popupExit: new Image(), popupHelp: new Image(), entity: new Image(),
-            itemC: new Image(), itemO: new Image(), itemN: new Image(), itemF: new Image(), itemH: new Image(), itemS: new Image()
+        // --- STATE GAME GLOBAL ---
+        const TILE_SIZE = 32;
+        const STATE = { LOADING: -1, PLAY: 0, EXIT_PROMPT: 1, HELP_PROMPT: 2, GAMEOVER: 3, DYING: 4, CLEARED: 5, VICTORY: 6 };
+        let currentState = STATE.LOADING;
+
+        // --- SISTEM PRELOADER ASET ---
+        const imageSources = {
+            bg1: 'kanvaspmmg1.png', bg2a: 'kanvaspmmg2a.png', bg2b: 'kanvaspmmg2b.png', bg2c: 'kanvaspmmg2c.png', bg3: 'kanvaspmmg3.png',
+            stat1_1: 'statpmmg1.png', stat1_2a: 'statpmmg2a.png', stat1_2b: 'statpmmg2b.png', stat1_2c: 'statpmmg2c.png', stat1_3: 'statpmmg3.png',
+            stat: 'statpmmg.png', statError: 'statpmmgx.png',
+            charStay: 'charpmmstay.png', charWalk: 'charpmmwalk.gif',
+            lifebar: 'lifebar.png', checklist: 'checklist.gif',
+            popupExit: 'popupexit.png', popupHelp: 'popuppmmg.gif', entity: 'entity101.gif',
+            itemC: 'pmmc12.png', itemO: 'pmmo16.png', itemN: 'pmmn14.png', itemF: 'pmmf19.png', itemH: 'pmmh1.png', itemS: 'pmms32.png'
         };
 
-        // UI & Karakter
-        assets.stat.src = 'statpmmg.png';
-        assets.statError.src = 'statpmmgx.png';
-        assets.charStay.src = 'charpmmstay.png';
-        assets.charWalk.src = 'charpmmwalk.gif';
-        assets.lifebar.src = 'lifebar.png';
-        assets.checklist.src = 'checklist.gif';
-        assets.popupExit.src = 'popupexit.png';
-        assets.popupHelp.src = 'popuppmmg.gif'; 
-        assets.entity.src = 'entity101.gif';
+        const assets = {};
+        let assetsLoaded = 0;
+        const totalAssets = Object.keys(imageSources).length;
+        
+        let currentBg = null;
+        let currentStat1 = null;
 
-        // Atom/Item
-        assets.itemC.src = 'pmmc12.png';
-        assets.itemO.src = 'pmmo16.png';
-        assets.itemN.src = 'pmmn14.png';
-        assets.itemF.src = 'pmmf19.png';
-        assets.itemH.src = 'pmmh1.png';
-        assets.itemS.src = 'pmms32.png';
+        function preloadAssets() {
+            for (let key in imageSources) {
+                assets[key] = new Image();
+                assets[key].onload = () => {
+                    assetsLoaded++;
+                    if (assetsLoaded === totalAssets) {
+                        loadStage(0); // Mulai game jika semua selesai dimuat
+                        currentState = STATE.PLAY;
+                    }
+                };
+                assets[key].onerror = () => {
+                    console.error("Gagal memuat asset: " + imageSources[key]);
+                    assetsLoaded++; // Tetap lanjut agar tidak freeze
+                    if (assetsLoaded === totalAssets) {
+                        loadStage(0);
+                        currentState = STATE.PLAY;
+                    }
+                };
+                assets[key].src = imageSources[key];
+            }
+        }
 
         // --- DATABASE LEVEL LENGKAP ---
         const STAGES = [
             {   // Index 0: Stage 1 (H2O)
-                name: "1", bgSrc: 'kanvaspmmg1.png', stat1Src: 'statpmmg1.png',
+                name: "1", bgKey: 'bg1', stat1Key: 'stat1_1',
                 spawn: {c: 0, r: 5}, exit: {c: 15, r: 5}, targetItems: 3, isLoopPath: false,
                 grid: [
                     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -142,7 +165,7 @@
                 entityPath: [ {c: 15, r: 6}, {c: 15, r: 7}, {c: 14, r: 7}, {c: 14, r: 8}, {c: 13, r: 8} ]
             },
             {   // Index 1: Stage 2A (CO2)
-                name: "2A", bgSrc: 'kanvaspmmg2a.png', stat1Src: 'statpmmg2a.png',
+                name: "2A", bgKey: 'bg2a', stat1Key: 'stat1_2a',
                 spawn: {c: 0, r: 3}, exit: {c: 15, r: 6}, targetItems: 3, isLoopPath: false,
                 grid: [
                     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -163,7 +186,7 @@
                 entityPath: [ {c: 13, r: 7}, {c: 13, r: 8}, {c: 14, r: 8}, {c: 15, r: 8} ]
             },
             {   // Index 2: Stage 2B (NO2)
-                name: "2B", bgSrc: 'kanvaspmmg2b.png', stat1Src: 'statpmmg2b.png',
+                name: "2B", bgKey: 'bg2b', stat1Key: 'stat1_2b',
                 spawn: {c: 0, r: 2}, exit: {c: 15, r: 2}, targetItems: 3, isLoopPath: false,
                 grid: [
                     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -184,7 +207,7 @@
                 entityPath: [ {c: 11, r: 2}, {c: 12, r: 2}, {c: 13, r: 2}, {c: 13, r: 3}, {c: 14, r: 3}, {c: 15, r: 3} ]
             },
             {   // Index 3: Stage 2C (SO2)
-                name: "2C", bgSrc: 'kanvaspmmg2c.png', stat1Src: 'statpmmg2c.png',
+                name: "2C", bgKey: 'bg2c', stat1Key: 'stat1_2c',
                 spawn: {c: 0, r: 6}, exit: {c: 15, r: 7}, targetItems: 3, isLoopPath: false,
                 grid: [
                     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -205,7 +228,7 @@
                 entityPath: [ {c: 14, r: 2}, {c: 15, r: 2}, {c: 15, r: 3}, {c: 15, r: 4}, {c: 15, r: 5} ]
             },
             {   // Index 4: Stage 3 (CH3OH) - FINAL STAGE
-                name: "3", bgSrc: 'kanvaspmmg3.png', stat1Src: 'statpmmg3.png',
+                name: "3", bgKey: 'bg3', stat1Key: 'stat1_3',
                 spawn: {c: 0, r: 8}, exit: {c: 15, r: 2}, targetItems: 6, isLoopPath: true,
                 grid: [
                     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -215,16 +238,15 @@
                     [0,0,1,1,0,0,0,0,0,0,0,0,0,1,0,1]  
                 ],
                 items: [
-                    { c: 4, r: 8, trueItem: true,  mass: 12, imgKey: 'itemC', uiIdx: 1 }, // f2
-                    { c: 13, r: 2, trueItem: true,  mass: 16, imgKey: 'itemO', uiIdx: 0 }, // e2
+                    { c: 4, r: 8, trueItem: true,  mass: 12, imgKey: 'itemC', uiIdx: 1 }, 
+                    { c: 13, r: 2, trueItem: true,  mass: 16, imgKey: 'itemO', uiIdx: 0 }, 
                     { c: 3, r: 7, trueItem: false, mass: 14, imgKey: 'itemN' },
                     { c: 14, r: 8, trueItem: false, mass: 19, imgKey: 'itemF' },
-                    { c: 3, r: 2, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 2 }, // g2
-                    { c: 15, r: 5, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 3 }, // h2
-                    { c: 9, r: 6, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 4 }, // i2
-                    { c: 12, r: 8, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 5 }  // j2
+                    { c: 3, r: 2, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 2 }, 
+                    { c: 15, r: 5, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 3 }, 
+                    { c: 9, r: 6, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 4 }, 
+                    { c: 12, r: 8, trueItem: true,  mass: 1,  imgKey: 'itemH', uiIdx: 5 }  
                 ],
-                // Rute memutar (Loop continuous)
                 entityPath: [ 
                     {c:11,r:2}, {c:11,r:3}, {c:11,r:4}, {c:11,r:5}, {c:11,r:6}, {c:11,r:7}, {c:11,r:8},
                     {c:10,r:8}, {c:9,r:8}, {c:8,r:8}, {c:7,r:8}, {c:6,r:8}, {c:5,r:8},
@@ -234,8 +256,7 @@
             }
         ];
 
-        // --- GLOBAL STATE ---
-        const TILE_SIZE = 32;
+        // --- VARIABEL DINAMIS ---
         let currentStageIndex = 0; 
         let mapGrid = [];
         let items = [];
@@ -246,9 +267,6 @@
         let checklists = [false, false, false, false, false, false]; 
         let errorUITimer = 0;
         let floatingTexts = [];
-        
-        const STATE = { PLAY: 0, EXIT_PROMPT: 1, HELP_PROMPT: 2, GAMEOVER: 3, DYING: 4, CLEARED: 5, VICTORY: 6 };
-        let currentState = STATE.PLAY;
         let fadeAlpha = 0;
         let fadeDirection = 1;
 
@@ -260,8 +278,9 @@
             currentStageIndex = index;
             let s = STAGES[index];
             
-            assets.bg.src = s.bgSrc;
-            assets.stat1.src = s.stat1Src;
+            // Tarik gambar dari preloaded assets
+            currentBg = assets[s.bgKey];
+            currentStat1 = assets[s.stat1Key];
             mapGrid = s.grid;
             
             player.col = s.spawn.c;
@@ -297,6 +316,7 @@
         let isPlayerMoving = false; 
 
         window.addEventListener('keydown', (e) => {
+            if (currentState === STATE.LOADING) return;
             const key = e.key.toLowerCase();
             if (currentState === STATE.HELP_PROMPT) { currentState = STATE.PLAY; return; }
             if (currentState !== STATE.PLAY) return;
@@ -325,6 +345,7 @@
             if(btn) {
                 btn.addEventListener('pointerdown', (e) => { 
                     e.preventDefault(); e.stopPropagation(); 
+                    if(currentState === STATE.LOADING) return;
                     if(currentState === STATE.HELP_PROMPT) { currentState = STATE.PLAY; return; }
                     if(currentState === STATE.PLAY) activeKeys[key] = true; 
                 });
@@ -342,6 +363,7 @@
         if(btnActionElement) {
             btnActionElement.addEventListener('pointerdown', (e) => { 
                 e.preventDefault(); e.stopPropagation(); 
+                if(currentState === STATE.LOADING) return;
                 if(currentState === STATE.HELP_PROMPT) { currentState = STATE.PLAY; return; }
                 if(currentState === STATE.PLAY) handleAction(); 
             });
@@ -355,7 +377,6 @@
         function handleAction() {
             let s = STAGES[currentStageIndex];
             if (player.col === s.exit.c && player.row === s.exit.r) {
-                // Cek dinamis berdasarkan jumlah item target di stage tersebut
                 let allCollected = true;
                 for(let i=0; i<s.targetItems; i++) {
                     if (!checklists[i]) allCollected = false;
@@ -412,6 +433,8 @@
 
         // --- UPDATE LOOP ---
         function update() {
+            if (currentState === STATE.LOADING) return; // Kunci update jika masih loading
+
             if (currentState === STATE.DYING) {
                 fadeAlpha += 0.02 * fadeDirection;
                 if (fadeAlpha >= 1 && fadeDirection === 1) {
@@ -429,7 +452,6 @@
             if (currentState !== STATE.PLAY) return;
             if (errorUITimer > 0) errorUITimer--;
 
-            // Hitbox Entity (Berlaku untuk rute bolak balik maupun Loop)
             let dist = Math.abs(player.col - entity.col) + Math.abs(player.row - entity.row);
             if (dist <= 1 && currentState === STATE.PLAY) {
                 currentState = STATE.DYING;
@@ -465,7 +487,6 @@
                 let s = STAGES[currentStageIndex];
                 let nextIdx;
                 
-                // Cek tipe rute pergerakan (Looping murni vs Bolak Balik)
                 if (s.isLoopPath) {
                     nextIdx = (entity.pathIdx + 1) % entityPath.length;
                 } else {
@@ -500,7 +521,20 @@
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            if (assets.bg.complete) ctx.drawImage(assets.bg, 0, 0, 512, 288);
+            // Layar Preloading
+            if (currentState === STATE.LOADING) {
+                ctx.fillStyle = "#1a1a1a";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "24px 'VT323', monospace";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                let progress = Math.floor((assetsLoaded / totalAssets) * 100);
+                ctx.fillText(`Memuat Aset... ${progress}%`, 256, 144);
+                return; // Berhenti menggambar sampai loading selesai
+            }
+
+            if (currentBg && currentBg.complete) ctx.drawImage(currentBg, 0, 0, 512, 288);
 
             items.forEach(item => {
                 let imgObj = assets[item.imgKey];
@@ -535,7 +569,7 @@
             }
 
             if (assets.stat.complete) ctx.drawImage(assets.stat, 0, 0, 512, 288);
-            if (assets.stat1.complete) ctx.drawImage(assets.stat1, 0, 0, 512, 288);
+            if (currentStat1 && currentStat1.complete) ctx.drawImage(currentStat1, 0, 0, 512, 288);
 
             if (assets.lifebar.complete) {
                 if(lives[0]) ctx.drawImage(assets.lifebar, 32, 32, 32, 32);  
@@ -545,7 +579,6 @@
 
             if (assets.checklist.complete) {
                 let s = STAGES[currentStageIndex];
-                // Tampilkan jumlah checklist sesuai target items (bisa 3 atau 6)
                 for(let i=0; i<s.targetItems; i++) {
                     if(checklists[i]) ctx.drawImage(assets.checklist, 128 + (i * 32), 32, 32, 32); 
                 }
@@ -605,7 +638,6 @@
                 ctx.fillStyle = "#ffffff";
                 ctx.font = "18px 'VT323', monospace";
                 ctx.fillText(`Semua Molekul Berhasil Disusun`, 256, 154);
-                // Tempat menaruh Redirect atau Reset jika user ketuk layarnya nanti
             }
             else if (currentState === STATE.GAMEOVER) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
@@ -619,6 +651,8 @@
 
         // --- KLIK KANVAS & TRANSISI MENU ---
         canvas.addEventListener('pointerdown', (e) => {
+            if (currentState === STATE.LOADING) return; // Cegah klik saat loading
+            
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
@@ -639,12 +673,10 @@
             
             else if (currentState === STATE.CLEARED) {
                 if (currentStageIndex === 0) {
-                    // Random Stage 2 (Index 1, 2, atau 3)
                     let randomStage2 = Math.floor(Math.random() * 3) + 1; 
                     loadStage(randomStage2);
                     currentState = STATE.PLAY;
                 } else if (currentStageIndex >= 1 && currentStageIndex <= 3) {
-                    // Meluncur ke Stage 3 (Index 4)
                     loadStage(4);
                     currentState = STATE.PLAY;
                 }
@@ -654,7 +686,8 @@
             }
         });
 
-        loadStage(0);
+        // Jalankan preloading, ini otomatis akan memulai game saat 100%
+        preloadAssets();
 
         function gameLoop() {
             update();
