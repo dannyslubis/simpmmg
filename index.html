@@ -76,6 +76,27 @@
             cursor: pointer;
             z-index: 10;
         }
+
+        /* --- Overlay HTML Khusus Tutorial (Agar GIF bisa bergerak) --- */
+        #tutorialOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20; /* Lebih tinggi dari D-pad */
+            display: none;
+            background-color: rgba(0, 0, 0, 0.6);
+            /* Pointer events none agar klik tembus ke canvas untuk mendeteksi koordinat X di pojok */
+            pointer-events: none; 
+        }
+
+        #tutorialOverlay img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            image-rendering: pixelated;
+        }
     </style>
 </head>
 <body>
@@ -83,18 +104,27 @@
     <div id="gameContainer">
         <canvas id="gameCanvas" width="512" height="288"></canvas>
         
-        <div class="dpad-container">
+        <div class="dpad-container" id="ui-dpad">
             <div id="btn-up" class="dpad-hitbox"></div>
             <div id="btn-left" class="dpad-hitbox"></div>
             <div id="btn-right" class="dpad-hitbox"></div>
             <div id="btn-down" class="dpad-hitbox"></div>
         </div>
         <div id="btn-action"></div>
+
+        <div id="tutorialOverlay">
+            <img src="popuptutpmmg.gif" alt="Tutorial">
+        </div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+
+        // Elemen HTML UI untuk disembunyikan/ditampilkan
+        const uiDpad = document.getElementById('ui-dpad');
+        const uiAction = document.getElementById('btn-action');
+        const uiTutorial = document.getElementById('tutorialOverlay');
 
         // --- STATE GAME GLOBAL ---
         const TILE_SIZE = 32;
@@ -108,7 +138,7 @@
             stat: 'statpmmg.png', statError: 'statpmmgx.png',
             charStay: 'charpmmstay.png', charWalk: 'charpmmwalk.gif',
             lifebar: 'lifebar.png', checklist: 'checklist.gif',
-            popupExit: 'popupexit.png', popupHelp: 'popuptutpmmg.gif', entity: 'entity101.gif',
+            popupExit: 'popupexit.png', entity: 'entity101.gif',
             itemC: 'pmmc12.png', itemO: 'pmmo16.png', itemN: 'pmmn14.png', itemF: 'pmmf19.png', itemH: 'pmmh1.png', itemS: 'pmms32.png'
         };
 
@@ -125,7 +155,7 @@
                 assets[key].onload = () => {
                     assetsLoaded++;
                     if (assetsLoaded === totalAssets) {
-                        loadStage(0);
+                        loadStage(0); 
                         currentState = STATE.PLAY;
                     }
                 };
@@ -317,12 +347,7 @@
         window.addEventListener('keydown', (e) => {
             if (currentState === STATE.LOADING) return;
             const key = e.key.toLowerCase();
-            
-            // Tombol Keyboard untuk menutup help prompt (opsional, sebagai backup)
-            if (currentState === STATE.HELP_PROMPT) { 
-                if (key === 'x') currentState = STATE.PLAY; // Bisa tambah tombol keyboard X
-                return; 
-            }
+            if (currentState === STATE.HELP_PROMPT) { currentState = STATE.PLAY; return; }
             if (currentState !== STATE.PLAY) return;
 
             if (key === 'w' || key === 'arrowup') activeKeys.up = true;
@@ -340,27 +365,29 @@
             if (key === 'd' || key === 'arrowright') activeKeys.right = false;
         });
 
-        const addTouchControl = (id, key) => {
-            const btn = document.getElementById(id);
-            if(btn) {
-                btn.addEventListener('pointerdown', (e) => { 
+        document.addEventListener('pointerdown', (e) => {
+            if (currentState === STATE.HELP_PROMPT) currentState = STATE.PLAY;
+        });
+
+        const addTouchControl = (ele, key) => {
+            if(ele) {
+                ele.addEventListener('pointerdown', (e) => { 
                     e.preventDefault(); e.stopPropagation(); 
                     if(currentState === STATE.LOADING || currentState === STATE.HELP_PROMPT) return;
                     if(currentState === STATE.PLAY) activeKeys[key] = true; 
                 });
-                btn.addEventListener('pointerup', (e) => { e.preventDefault(); activeKeys[key] = false; });
-                btn.addEventListener('pointerleave', (e) => { e.preventDefault(); activeKeys[key] = false; });
+                ele.addEventListener('pointerup', (e) => { e.preventDefault(); activeKeys[key] = false; });
+                ele.addEventListener('pointerleave', (e) => { e.preventDefault(); activeKeys[key] = false; });
             }
         };
 
-        addTouchControl('btn-up', 'up'); 
-        addTouchControl('btn-down', 'down');
-        addTouchControl('btn-left', 'left'); 
-        addTouchControl('btn-right', 'right');
+        addTouchControl(document.getElementById('btn-up'), 'up'); 
+        addTouchControl(document.getElementById('btn-down'), 'down');
+        addTouchControl(document.getElementById('btn-left'), 'left'); 
+        addTouchControl(document.getElementById('btn-right'), 'right');
 
-        const btnActionElement = document.getElementById('btn-action');
-        if(btnActionElement) {
-            btnActionElement.addEventListener('pointerdown', (e) => { 
+        if(uiAction) {
+            uiAction.addEventListener('pointerdown', (e) => { 
                 e.preventDefault(); e.stopPropagation(); 
                 if(currentState === STATE.LOADING || currentState === STATE.HELP_PROMPT) return;
                 if(currentState === STATE.PLAY) handleAction(); 
@@ -517,6 +544,22 @@
 
         // --- RENDER LOOP ---
         function render() {
+            // Toggles UI Buttons automatically based on state
+            if (currentState === STATE.PLAY) {
+                uiDpad.style.display = 'block';
+                uiAction.style.display = 'block';
+            } else {
+                uiDpad.style.display = 'none';
+                uiAction.style.display = 'none';
+            }
+
+            // Toggles GIF Overlay automatically based on state
+            if (currentState === STATE.HELP_PROMPT) {
+                uiTutorial.style.display = 'block';
+            } else {
+                uiTutorial.style.display = 'none';
+            }
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (currentState === STATE.LOADING) {
@@ -604,17 +647,12 @@
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
-            // --- MENU & POPUPS ---
+            // --- MENU & POPUPS KHUSUS CANVAS ---
             if (currentState === STATE.EXIT_PROMPT && assets.popupExit.complete) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.6)"; 
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(assets.popupExit, 0, 0, 512, 288);
             } 
-            else if (currentState === STATE.HELP_PROMPT && assets.popupHelp.complete) {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(assets.popupHelp, 0, 0, 512, 288);
-            }
             else if (currentState === STATE.CLEARED) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -659,9 +697,7 @@
             e.stopPropagation(); 
 
             if (currentState === STATE.PLAY) {
-                // p1 (Koordinat Tombol X)
                 if (x >= 480 && x <= 512 && y >= 0 && y <= 32) currentState = STATE.EXIT_PROMPT;
-                // p2 (Koordinat Tombol ?)
                 else if (x >= 480 && x <= 512 && y >= 32 && y <= 64) currentState = STATE.HELP_PROMPT;
             } 
             else if (currentState === STATE.EXIT_PROMPT) {
@@ -669,12 +705,9 @@
                 else if (x >= 256 && x <= 352 && y >= 160 && y <= 192) currentState = STATE.PLAY;
             }
             else if (currentState === STATE.HELP_PROMPT) {
-                // HANYA tutup jika menekan tombol X di pojok kanan atas (p1)
-                if (x >= 480 && x <= 512 && y >= 0 && y <= 32) {
-                    currentState = STATE.PLAY;
-                }
+                // Pastikan tutorial hanya tertutup jika mengklik tombol X di koordinat p1
+                if (x >= 480 && x <= 512 && y >= 0 && y <= 32) currentState = STATE.PLAY;
             }
-            
             else if (currentState === STATE.CLEARED) {
                 if (currentStageIndex === 0) {
                     let randomStage2 = Math.floor(Math.random() * 3) + 1; 
