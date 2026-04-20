@@ -108,7 +108,7 @@
             stat: 'statpmmg.png', statError: 'statpmmgx.png',
             charStay: 'charpmmstay.png', charWalk: 'charpmmwalk.gif',
             lifebar: 'lifebar.png', checklist: 'checklist.gif',
-            popupExit: 'popupexit.png', popupHelp: 'popuppmmg.gif', entity: 'entity101.gif',
+            popupExit: 'popupexit.png', popupHelp: 'popuptutpmmg.gif', entity: 'entity101.gif',
             itemC: 'pmmc12.png', itemO: 'pmmo16.png', itemN: 'pmmn14.png', itemF: 'pmmf19.png', itemH: 'pmmh1.png', itemS: 'pmms32.png'
         };
 
@@ -125,13 +125,13 @@
                 assets[key].onload = () => {
                     assetsLoaded++;
                     if (assetsLoaded === totalAssets) {
-                        loadStage(0); // Mulai game jika semua selesai dimuat
+                        loadStage(0);
                         currentState = STATE.PLAY;
                     }
                 };
                 assets[key].onerror = () => {
                     console.error("Gagal memuat asset: " + imageSources[key]);
-                    assetsLoaded++; // Tetap lanjut agar tidak freeze
+                    assetsLoaded++; 
                     if (assetsLoaded === totalAssets) {
                         loadStage(0);
                         currentState = STATE.PLAY;
@@ -278,7 +278,6 @@
             currentStageIndex = index;
             let s = STAGES[index];
             
-            // Tarik gambar dari preloaded assets
             currentBg = assets[s.bgKey];
             currentStat1 = assets[s.stat1Key];
             mapGrid = s.grid;
@@ -318,7 +317,12 @@
         window.addEventListener('keydown', (e) => {
             if (currentState === STATE.LOADING) return;
             const key = e.key.toLowerCase();
-            if (currentState === STATE.HELP_PROMPT) { currentState = STATE.PLAY; return; }
+            
+            // Tombol Keyboard untuk menutup help prompt (opsional, sebagai backup)
+            if (currentState === STATE.HELP_PROMPT) { 
+                if (key === 'x') currentState = STATE.PLAY; // Bisa tambah tombol keyboard X
+                return; 
+            }
             if (currentState !== STATE.PLAY) return;
 
             if (key === 'w' || key === 'arrowup') activeKeys.up = true;
@@ -336,17 +340,12 @@
             if (key === 'd' || key === 'arrowright') activeKeys.right = false;
         });
 
-        document.addEventListener('pointerdown', (e) => {
-            if (currentState === STATE.HELP_PROMPT) currentState = STATE.PLAY;
-        });
-
         const addTouchControl = (id, key) => {
             const btn = document.getElementById(id);
             if(btn) {
                 btn.addEventListener('pointerdown', (e) => { 
                     e.preventDefault(); e.stopPropagation(); 
-                    if(currentState === STATE.LOADING) return;
-                    if(currentState === STATE.HELP_PROMPT) { currentState = STATE.PLAY; return; }
+                    if(currentState === STATE.LOADING || currentState === STATE.HELP_PROMPT) return;
                     if(currentState === STATE.PLAY) activeKeys[key] = true; 
                 });
                 btn.addEventListener('pointerup', (e) => { e.preventDefault(); activeKeys[key] = false; });
@@ -363,8 +362,7 @@
         if(btnActionElement) {
             btnActionElement.addEventListener('pointerdown', (e) => { 
                 e.preventDefault(); e.stopPropagation(); 
-                if(currentState === STATE.LOADING) return;
-                if(currentState === STATE.HELP_PROMPT) { currentState = STATE.PLAY; return; }
+                if(currentState === STATE.LOADING || currentState === STATE.HELP_PROMPT) return;
                 if(currentState === STATE.PLAY) handleAction(); 
             });
         }
@@ -433,7 +431,7 @@
 
         // --- UPDATE LOOP ---
         function update() {
-            if (currentState === STATE.LOADING) return; // Kunci update jika masih loading
+            if (currentState === STATE.LOADING) return; 
 
             if (currentState === STATE.DYING) {
                 fadeAlpha += 0.02 * fadeDirection;
@@ -521,7 +519,6 @@
         function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Layar Preloading
             if (currentState === STATE.LOADING) {
                 ctx.fillStyle = "#1a1a1a";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -531,7 +528,7 @@
                 ctx.textBaseline = "middle";
                 let progress = Math.floor((assetsLoaded / totalAssets) * 100);
                 ctx.fillText(`Memuat Aset... ${progress}%`, 256, 144);
-                return; // Berhenti menggambar sampai loading selesai
+                return; 
             }
 
             if (currentBg && currentBg.complete) ctx.drawImage(currentBg, 0, 0, 512, 288);
@@ -651,7 +648,7 @@
 
         // --- KLIK KANVAS & TRANSISI MENU ---
         canvas.addEventListener('pointerdown', (e) => {
-            if (currentState === STATE.LOADING) return; // Cegah klik saat loading
+            if (currentState === STATE.LOADING) return; 
             
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -662,14 +659,21 @@
             e.stopPropagation(); 
 
             if (currentState === STATE.PLAY) {
+                // p1 (Koordinat Tombol X)
                 if (x >= 480 && x <= 512 && y >= 0 && y <= 32) currentState = STATE.EXIT_PROMPT;
+                // p2 (Koordinat Tombol ?)
                 else if (x >= 480 && x <= 512 && y >= 32 && y <= 64) currentState = STATE.HELP_PROMPT;
             } 
             else if (currentState === STATE.EXIT_PROMPT) {
                 if (x >= 160 && x <= 256 && y >= 160 && y <= 192) console.log("Keluar dari game!");
                 else if (x >= 256 && x <= 352 && y >= 160 && y <= 192) currentState = STATE.PLAY;
             }
-            else if (currentState === STATE.HELP_PROMPT) currentState = STATE.PLAY;
+            else if (currentState === STATE.HELP_PROMPT) {
+                // HANYA tutup jika menekan tombol X di pojok kanan atas (p1)
+                if (x >= 480 && x <= 512 && y >= 0 && y <= 32) {
+                    currentState = STATE.PLAY;
+                }
+            }
             
             else if (currentState === STATE.CLEARED) {
                 if (currentStageIndex === 0) {
@@ -686,7 +690,6 @@
             }
         });
 
-        // Jalankan preloading, ini otomatis akan memulai game saat 100%
         preloadAssets();
 
         function gameLoop() {
